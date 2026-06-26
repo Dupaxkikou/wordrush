@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// MVP "entre amis" sans authentification : on autorise la lecture/écriture
+// publique sur les collections du jeu. Pour un usage plus large, il faudrait
+// ajouter Firebase Auth (même anonyme) et restreindre les écritures.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /profiles/{profileId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /rooms/{roomId} {
+      allow read: if true;
+      allow write: if true;
+
+      match /players/{playerId} {
+        allow read: if true;
+        allow write: if true;
+      }
+
+      match /rounds/{roundId} {
+        allow read: if true;
+        allow write: if true;
+      }
+    }
+  }
+}
