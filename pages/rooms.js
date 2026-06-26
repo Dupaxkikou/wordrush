@@ -132,7 +132,7 @@ export default function Rooms() {
                 <span className="badge">{room.code}</span>
               </div>
               <div style={{ fontSize: 12, color: "#9ca3af" }}>
-                {room.roundCount} manches
+                {room.playerCount || 0} joueur{(room.playerCount || 0) > 1 ? "s" : ""} · {room.roundCount} manches
               </div>
             </div>
             <button
