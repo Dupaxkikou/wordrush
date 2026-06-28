@@ -5,12 +5,16 @@ import {
   listenPublicRooms,
   createRoom,
   joinRoom,
+  joinGeneralRoom,
+  listenRoom,
+  GENERAL_ROOM_CODE,
 } from "../lib/firestoreHelpers";
 
 export default function Rooms() {
   const router = useRouter();
   const [username, setUsername] = useState(null);
   const [rooms, setRooms] = useState([]);
+  const [generalRoom, setGeneralRoom] = useState(null);
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,6 +32,24 @@ export default function Rooms() {
     const unsub = listenPublicRooms(setRooms);
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const unsub = listenRoom(GENERAL_ROOM_CODE, setGeneralRoom);
+    return () => unsub();
+  }, []);
+
+  async function handleJoinGeneral() {
+    setError("");
+    setBusy(true);
+    try {
+      await joinGeneralRoom(username);
+      router.push(`/room/${GENERAL_ROOM_CODE}`);
+    } catch (err) {
+      setError(err.message || "Impossible de rejoindre le salon général.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleCreateRoom() {
     setError("");
@@ -95,10 +117,26 @@ export default function Rooms() {
       </div>
       <p className="subtitle">Connecté en tant que {username}</p>
 
+      <div className="card general-room-card">
+        <div className="row-between">
+          <div>
+            <h3 style={{ marginTop: 0, marginBottom: 4 }}>🌍 Salon Général</h3>
+            <p style={{ margin: 0, fontSize: 13, color: "#6b7280" }}>
+              Toujours ouvert, sans code. {generalRoom?.playerCount || 0} joueur
+              {(generalRoom?.playerCount || 0) > 1 ? "s" : ""} présent
+              {(generalRoom?.playerCount || 0) > 1 ? "s" : ""}.
+            </p>
+          </div>
+          <button className="btn" onClick={handleJoinGeneral} disabled={busy}>
+            Rejoindre
+          </button>
+        </div>
+      </div>
+
       <div className="card">
         <div className="row" style={{ marginBottom: 12 }}>
           <button className="btn" onClick={handleCreateRoom} disabled={busy}>
-            ➕ Créer un salon public
+            ➕ Créer un salon avec code
           </button>
         </div>
         <form onSubmit={handleJoinByCode} className="row">
@@ -117,33 +155,35 @@ export default function Rooms() {
       </div>
 
       <div className="card">
-        <h3 style={{ marginTop: 0 }}>Salons en attente de joueurs</h3>
-        {rooms.length === 0 && (
+        <h3 style={{ marginTop: 0 }}>Salons avec code en attente de joueurs</h3>
+        {rooms.filter((r) => r.code !== GENERAL_ROOM_CODE).length === 0 && (
           <p style={{ color: "#9ca3af" }}>
             Aucun salon ouvert pour le moment. Crée le premier !
           </p>
         )}
-        {rooms.map((room) => (
-          <div key={room.id} className="player-row">
-            <Avatar username={room.hostUsername} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600 }}>
-                Salon de {room.hostUsername}{" "}
-                <span className="badge">{room.code}</span>
+        {rooms
+          .filter((r) => r.code !== GENERAL_ROOM_CODE)
+          .map((room) => (
+            <div key={room.id} className="player-row">
+              <Avatar username={room.hostUsername} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600 }}>
+                  Salon de {room.hostUsername}{" "}
+                  <span className="badge">{room.code}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "#9ca3af" }}>
+                  {room.playerCount || 0} joueur{(room.playerCount || 0) > 1 ? "s" : ""} · {room.roundCount} manches
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: "#9ca3af" }}>
-                {room.playerCount || 0} joueur{(room.playerCount || 0) > 1 ? "s" : ""} · {room.roundCount} manches
-              </div>
+              <button
+                className="btn"
+                onClick={() => handleJoinRoom(room.code)}
+                disabled={busy}
+              >
+                Rejoindre
+              </button>
             </div>
-            <button
-              className="btn"
-              onClick={() => handleJoinRoom(room.code)}
-              disabled={busy}
-            >
-              Rejoindre
-            </button>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );

@@ -5,8 +5,10 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #0b0f17;
-  color: #e5e7eb;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #ffe7f5 0%, #f0e9ff 35%, #e3f3ff 70%, #fff7e0 100%);
+  background-attachment: fixed;
+  color: #1f2233;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -22,11 +24,23 @@ a {
 }
 
 .card {
-  background: #131826;
-  border: 1px solid #1f2937;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(124, 58, 237, 0.08);
+  border-radius: 18px;
   padding: 20px;
   margin-bottom: 16px;
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.08);
+}
+
+.general-room-card {
+  background: linear-gradient(135deg, #fde68a 0%, #fca5e0 50%, #c4b5fd 100%);
+  border: none;
+  color: #1f2233;
+}
+
+.general-room-card p {
+  color: #3b2a4a !important;
 }
 
 .btn {
@@ -34,59 +48,65 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #6366f1;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 12px 18px;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
 }
 
 .btn:hover {
-  background: #4f46e5;
+  filter: brightness(1.05);
+  box-shadow: 0 6px 18px rgba(139, 92, 246, 0.45);
 }
 
 .btn:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .btn:disabled {
-  background: #374151;
+  background: #d1d5db;
+  color: #6b7280;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn-secondary {
-  background: #1f2937;
+  background: white;
+  color: #6d28d9;
+  border: 2px solid #ede9fe;
+  box-shadow: none;
 }
 
 .btn-secondary:hover {
-  background: #273449;
+  background: #f5f3ff;
+  filter: none;
 }
 
 .btn-danger {
-  background: #ef4444;
-}
-
-.btn-danger:hover {
-  background: #dc2626;
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
 }
 
 input[type="text"] {
-  background: #0f1521;
-  border: 1px solid #2a3344;
-  color: #e5e7eb;
-  border-radius: 10px;
+  background: #faf9ff;
+  border: 2px solid #ede9fe;
+  color: #1f2233;
+  border-radius: 12px;
   padding: 12px 14px;
   font-size: 15px;
   width: 100%;
   outline: none;
+  transition: border-color 0.15s ease;
 }
 
 input[type="text"]:focus {
-  border-color: #6366f1;
+  border-color: #8b5cf6;
 }
 
 .row {
@@ -99,30 +119,37 @@ input[type="text"]:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 800;
   margin: 0 0 4px;
+  background: linear-gradient(135deg, #7c3aed, #db2777);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .subtitle {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 14px;
   margin: 0 0 20px;
 }
 
 .badge {
-  background: #1f2937;
+  background: #f3e8ff;
+  color: #6d28d9;
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 12px;
-  color: #9ca3af;
+  font-weight: 700;
 }
 
 .error-text {
-  color: #f87171;
+  color: #dc2626;
+  font-weight: 600;
   font-size: 14px;
   margin-top: 8px;
 }
@@ -132,7 +159,7 @@ input[type="text"]:focus {
   align-items: center;
   gap: 12px;
   padding: 10px 0;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid #f3e8ff;
 }
 
 .player-row:last-child {
@@ -141,31 +168,34 @@ input[type="text"]:focus {
 
 .category-banner {
   text-align: center;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-radius: 14px;
-  padding: 22px;
+  color: white;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899, #f59e0b);
+  border-radius: 18px;
+  padding: 24px;
   margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.35);
 }
 
 .word-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #1f2937;
   border-radius: 999px;
   padding: 6px 12px;
   font-size: 13px;
+  font-weight: 700;
   margin: 4px 4px 0 0;
+  color: white;
 }
 
 .word-chip.points-3 {
-  background: #7c2d12;
+  background: linear-gradient(135deg, #f97316, #dc2626);
 }
 .word-chip.points-2 {
-  background: #78350f;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
 }
 .word-chip.points-1 {
-  background: #1f2937;
+  background: linear-gradient(135deg, #34d399, #10b981);
 }

@@ -13,6 +13,8 @@ import {
   nextRoundOrFinish,
   recordFinalResults,
   leaveRoom,
+  leaveGeneralRoom,
+  resetGeneralRoomForNextGame,
 } from "../../lib/firestoreHelpers";
 
 export default function RoomPage() {
@@ -66,6 +68,12 @@ export default function RoomPage() {
   }, [code, room?.currentRoundIndex]);
 
   useEffect(() => {
+    if (room?.status !== "finished") {
+      resultsRecorded.current = false;
+    }
+  }, [room?.status]);
+
+  useEffect(() => {
     if (room?.status === "finished" && players.length > 0 && !resultsRecorded.current) {
       resultsRecorded.current = true;
       recordFinalResults(code, players).catch(() => {});
@@ -80,7 +88,17 @@ export default function RoomPage() {
     );
   }
 
-  const isHost = room.hostUsername === username;
+  const activePlayers = players.filter((p) => p.left !== true && p.active !== false);
+
+  let generalHostUsername = room.hostUsername;
+  if (room.isGeneral) {
+    const sortedByJoin = [...activePlayers].sort(
+      (a, b) => (a.joinedAt?.toMillis?.() || 0) - (b.joinedAt?.toMillis?.() || 0)
+    );
+    generalHostUsername = sortedByJoin[0]?.username || null;
+  }
+
+  const isHost = generalHostUsername?.toLowerCase() === username.toLowerCase();
   const me = players.find((p) => p.username.toLowerCase() === username.toLowerCase());
 
   async function handleStart() {
@@ -125,26 +143,41 @@ export default function RoomPage() {
   }
 
   async function handleLeave() {
-    await leaveRoom(code, username);
+    if (room.isGeneral) {
+      await leaveGeneralRoom(username);
+    } else {
+      await leaveRoom(code, username);
+    }
     router.push("/rooms");
+  }
+
+  async function handlePlayAgain() {
+    try {
+      await resetGeneralRoomForNextGame();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
     <div className="container">
       <div className="row-between">
         <h1 className="title" style={{ marginBottom: 0 }}>
-          Salon {room.code}
+          {room.isGeneral ? "🌍 Salon Général" : `Salon ${room.code}`}
         </h1>
         <button className="btn btn-secondary" onClick={handleLeave}>
           Quitter
         </button>
       </div>
-      <p className="subtitle">Hôte : {room.hostUsername}</p>
+      <p className="subtitle">
+        {generalHostUsername ? `Hôte : ${generalHostUsername}` : "En attente d'un hôte..."}
+      </p>
 
       {room.status === "lobby" && (
         <LobbyView
           room={room}
-          players={players}
+          players={activePlayers}
+          hostUsername={generalHostUsername}
           isHost={isHost}
           onStart={handleStart}
         />
@@ -153,7 +186,7 @@ export default function RoomPage() {
       {room.status === "playing" && round && (
         <PlayingView
           round={round}
-          players={players}
+          players={activePlayers}
           username={username}
           wordInput={wordInput}
           setWordInput={setWordInput}
@@ -166,7 +199,7 @@ export default function RoomPage() {
       {room.status === "round_result" && round && (
         <RoundResultView
           round={round}
-          players={players}
+          players={activePlayers}
           isHost={isHost}
           isLastRound={room.currentRoundIndex >= (room.roundCount || 5) - 1}
           onNext={handleNextRound}
@@ -174,7 +207,13 @@ export default function RoomPage() {
       )}
 
       {room.status === "finished" && (
-        <FinishedView players={players} onBack={() => router.push("/rooms")} />
+        <FinishedView
+          players={activePlayers}
+          isGeneral={room.isGeneral}
+          isHost={isHost}
+          onBack={() => router.push("/rooms")}
+          onPlayAgain={handlePlayAgain}
+        />
       )}
 
       {error && <div className="card error-text">{error}</div>}
@@ -197,20 +236,22 @@ function reasonLabel(reason) {
   }
 }
 
-function LobbyView({ room, players, isHost, onStart }) {
+function LobbyView({ room, players, hostUsername, isHost, onStart }) {
   return (
     <>
-      <div className="card">
-        <h3 style={{ marginTop: 0 }}>Code du salon</h3>
-        <div className="row-between">
-          <span className="badge" style={{ fontSize: 18, padding: "8px 16px" }}>
-            {room.code}
-          </span>
-          <span style={{ color: "#9ca3af", fontSize: 13 }}>
-            Partage ce code à tes amis
-          </span>
+      {!room.isGeneral && (
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Code du salon</h3>
+          <div className="row-between">
+            <span className="badge" style={{ fontSize: 18, padding: "8px 16px" }}>
+              {room.code}
+            </span>
+            <span style={{ color: "#9ca3af", fontSize: 13 }}>
+              Partage ce code à tes amis
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="card">
         <h3 style={{ marginTop: 0 }}>Joueurs ({players.length})</h3>
@@ -218,9 +259,7 @@ function LobbyView({ room, players, isHost, onStart }) {
           <div key={p.username} className="player-row">
             <Avatar username={p.username} color={p.color} />
             <div style={{ fontWeight: 600 }}>{p.username}</div>
-            {p.username === room.hostUsername && (
-              <span className="badge">Hôte</span>
-            )}
+            {p.username === hostUsername && <span className="badge">Hôte</span>}
           </div>
         ))}
       </div>
@@ -385,7 +424,7 @@ function RoundResultView({ round, players, isHost, isLastRound, onNext }) {
   );
 }
 
-function FinishedView({ players, onBack }) {
+function FinishedView({ players, isGeneral, isHost, onBack, onPlayAgain }) {
   const sorted = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
   const winner = sorted[0];
 
@@ -408,7 +447,23 @@ function FinishedView({ players, onBack }) {
         ))}
       </div>
 
-      <button className="btn" style={{ width: "100%" }} onClick={onBack}>
+      {isGeneral ? (
+        isHost ? (
+          <button className="btn" style={{ width: "100%" }} onClick={onPlayAgain}>
+            🔁 Relancer une partie dans le salon général
+          </button>
+        ) : (
+          <p style={{ textAlign: "center", color: "#9ca3af" }}>
+            En attente que l'hôte relance une partie...
+          </p>
+        )
+      ) : null}
+
+      <button
+        className="btn btn-secondary"
+        style={{ width: "100%", marginTop: isGeneral ? 10 : 0 }}
+        onClick={onBack}
+      >
         Retour aux salons
       </button>
     </>
